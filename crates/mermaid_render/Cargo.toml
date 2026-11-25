@@ -18,24 +18,7 @@ test-support = []
 [dependencies]
 anyhow.workspace = true
 gpui.workspace = true
-merman = { workspace = true, features = [
-    "diagram-class",
-    "diagram-er",
-    "diagram-flowchart",
-    "diagram-gantt",
-    "diagram-git-graph",
-    "diagram-journey",
-    "diagram-mindmap",
-    "diagram-pie",
-    "diagram-quadrant-chart",
-    "diagram-sequence",
-    "diagram-state",
-    "diagram-timeline",
-    "diagram-xychart",
-    "layout-cytoscape",
-    "svg",
-] }
-quick-xml.workspace = true
+naiad.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 ztracing.workspace = true

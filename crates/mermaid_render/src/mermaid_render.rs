@@ -5,64 +5,20 @@
 //!
 //! The entrypoint to this crate is [`render_to_svg`].
 //!
-//! It takes a `&str` and a [`MermaidTheme`]. The output is an SVG with the
-//! following properties:
-//! - The style matches the provided theme
-//! - Nodes are given accent colors, even if none are provided in the mermaid
-//!   source.
-//! - The SVG has been tweaked based on the assumption that it will be rasterized
-//!   using `usvg`/`resvg`. Some bugs/quirks of `usvg`/`resvg` are accounted for
-//!   in this crate.
+//! It takes a `&str` and a [`MermaidTheme`] and returns an SVG that
+//! `usvg`/`resvg` can draw, styled to match the theme.
 //!
-//! This module uses the [`merman`] crate for rendering, rather than
-//! `mermaid-rs`, which was used in the previous implementation of mermaid
-//! rendering in Zed.
+//! Rendering is done by [`naiad`], a Rust port of Mermaid v13. naiad's
+//! "flat" SVG writes every theme colour as a literal value instead of a CSS
+//! variable and gives the root `<svg>` a fixed size, which is what `usvg`
+//! needs. Zed's theme is passed to naiad as Mermaid `themeVariables`, so no
+//! post-processing of the SVG is needed.
 //!
-//! Historically, this crate also carried generic `usvg`/`resvg` cleanup for SVG
-//! constructs that merman's parity output could emit, such as HTML labels in
-//! `<foreignObject>` and CSS/attribute forms that rasterizers do not handle.
-//! Since merman 0.6, that generic cleanup is exposed as merman's raster-safe SVG
-//! pipeline. Zed opts into that pipeline during rendering, then keeps
-//! editor-specific theme and accent color rules in this crate.
-//!
-//! The [`render_to_svg`] function operates in two stages:
-//! - [`render`] the mermaid text to raster-safe SVG using [`merman`].
-//! - [`postprocess`] the SVG to add Zed theme and accent styling.
-//!
-//! Zed's postprocessing is split up into stages. We parse the generated SVG
-//! using [`quick_xml`], which produces an iterator of
-//! [`Event<'_>`](quick_xml::events::Event)s. This iterator is then repeatedly
-//! transformed, and finally collected back into an SVG string.
-//!
-//! This approach:
-//! - Avoids doing multiple expensive string insertions.
-//! - Avoids parsing the SVG multiple times (without needing to put all the
-//!   logic in one huge function).
-//! - But is quite a bit more complex.
-//!
-//! I think this complexity is justified because of the drastic performance
-//! impact, as well as the low-risk nature; this code cannot panic, and errors
-//! in the output just produce weird-looking diagrams.
-//!
-//! ## Color handling
-//!
-//! We try to match the users theme, and also apply accent colors to diagrams to
-//! make them more visually interesting. Accent colors are derived from the
-//! `player_colors` in the Zed theme.
-//!
-//! There are three parts to color handling:
-//!
-//! 1. A [`merman::MermaidConfig`] is passed when initially rendering the
-//!    diagram. This sets most "normal" colors (background, text, etc.). However,
-//!    it's not possible to color nodes individually, and not all parts of the
-//!    diagrams are correctly themed.
-//! 2. `postprocess::accent_colors` injects custom CSS classes (e.g.
-//!    `zed-accent-0`) to specific elements, based on the diagram type and
-//!    node.
-//! 3. `postprocess::inject_css` injects CSS rules for the classes applied by
-//!    `accent_colors`
+//! naiad measures text with embedded Arial metrics, so diagrams are drawn
+//! with Arial (or the metric-compatible Liberation Sans) to keep labels
+//! inside their boxes. The theme's `font_family` is used only as a fallback.
 
-mod postprocess;
+mod color;
 mod render;
 
 use anyhow::Result;
@@ -171,7 +127,13 @@ pub(crate) fn css_color(color: Hsla) -> String {
     }
 }
 
-pub use postprocess::util::text_color_for_background;
+pub use color::text_color_for_background;
+
+/// Whether `source` is a Mermaid diagram that [`render_to_svg`] can draw: naiad
+/// detects its type (front matter and directives included).
+pub fn is_supported_diagram(source: &str) -> bool {
+    naiad::detect(source).is_some()
+}
 
 /// See the [module-level docs][crate] for more info.
 #[ztracing::instrument(skip_all)]
@@ -180,9 +142,7 @@ pub fn render_to_svg(
     theme: &MermaidTheme,
     svg_renderer: &SvgRenderer,
 ) -> Result<String> {
-    let svg = render::render_mermaid(source, theme, svg_renderer)?;
-    let svg = postprocess::postprocess(&svg, theme)?;
-    Ok(svg)
+    render::render_mermaid(source, theme, svg_renderer)
 }
 
 #[cfg(test)]

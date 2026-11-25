@@ -703,10 +703,44 @@ lsp-types = { git = "https://github.com/zed-industries/lsp-types", rev = "82d7fc
 mach2 = "0.6"
 markup5ever_rcdom = "0.39"
 mdbook = { version = "=0.4.40", default-features = false, features = ["search"] }
-merman = { version = "=0.9.3", default-features = false }
 mime = "0.3.17"
 minidumper = "0.11"
 moka = { version = "0.12.10", features = ["sync"] }
+# naiad has no crates.io release yet; pin the commit the fork was tested with.
+naiad = { git = "https://github.com/benediktziegler/naiad", rev = "1a01480975addeec08e8a5a9d71ff5a1dff0761a", default-features = false, features = [
+    "agentflow",
+    "architecture",
+    "block",
+    "c4",
+    "class",
+    "cynefin",
+    "er",
+    "eventmodeling",
+    "flowchart",
+    "gantt",
+    "gitgraph",
+    "info",
+    "ishikawa",
+    "journey",
+    "kanban",
+    "mindmap",
+    "packet",
+    "pie",
+    "quadrant",
+    "radar",
+    "railroad",
+    "requirement",
+    "sankey",
+    "sequence",
+    "state",
+    "timeline",
+    "treemap",
+    "treeview",
+    "usecase",
+    "venn",
+    "wardley",
+    "xychart",
+] }
 nanoid = "0.4"
 nbformat = "3.0.0"
 nix = "0.30"
