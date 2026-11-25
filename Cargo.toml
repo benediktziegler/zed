@@ -706,8 +706,8 @@ mdbook = { version = "=0.4.40", default-features = false, features = ["search"] 
 mime = "0.3.17"
 minidumper = "0.11"
 moka = { version = "0.12.10", features = ["sync"] }
-# naiad has no crates.io release yet; pin the commit the fork was tested with.
-naiad = { git = "https://github.com/benediktziegler/naiad", rev = "1a01480975addeec08e8a5a9d71ff5a1dff0761a", default-features = false, features = [
+# naiad has no crates.io release yet; pin a commit on its main branch.
+naiad = { git = "https://github.com/benediktziegler/naiad", rev = "4677e03c86734d12ad80004043921b951128b2b2", default-features = false, features = [
     "agentflow",
     "architecture",
     "block",
